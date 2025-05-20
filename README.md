@@ -55,27 +55,6 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
    SAP_PASSWORD=YOUR_PASS
    ```
 
-## Usage
-
-Run the MCP server over stdio transport:
-
-```bash
-python mcp_server.py
-```
-
-By default, it listens for MCP JSON-RPC calls on STDIO. Each tool is exposed as a method you can call. For example, to retrieve an ABAP class source:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "GetClass",
-  "params": {
-    "class_name": "ZCL_MY_CLASS"
-  },
-  "id": 1
-}
-```
-
 ### Available Tools
 
 * `GetProgram` – Retrieve ABAP program source
