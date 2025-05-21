@@ -30,7 +30,7 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
 
 3. **Install dependencies**
 
-   Create a **requirements.txt** file in the project root with the following contents:
+   pip install mcp "mcp[cli]"
 
    ```text
    mcp-server
