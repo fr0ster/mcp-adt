@@ -47,8 +47,8 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
    ```ini
    SAP_URL=https://my.sap.system:443
    SAP_CLIENT=100
-   SAP_USERNAME=YOUR_USER
-   SAP_PASSWORD=YOUR_PASS
+   SAP_USER=YOUR_USER
+   SAP_PASS=YOUR_PASS
    ```
 
 ### Available Tools
