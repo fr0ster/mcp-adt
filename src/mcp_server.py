@@ -1,26 +1,27 @@
+import argparse
+import os
 from mcp.server.fastmcp import FastMCP  # Import FastMCP, the quickstart server base
 
-from tools.function_group_source import get_function_group_source
-from tools.cds_source import get_cds_source
-from tools.class_source import get_class_source
-from tools.behavior_definition_source import get_behavior_definition_source
-from tools.function_source import get_function_source
-from tools.include_source import get_include_source
-from tools.interface_source import  get_interface_source
-from tools.package_structure import  get_package_structure
-from tools.program_source import get_program_source
-from tools.structure_source import get_structure_source
-from tools.table_source import get_table_source
-from tools.transaction_properties import get_transaction_properties
-from tools.type_info import get_type_info
-from tools.search_objects import get_search_objects
-from tools.usage_references import get_usage_references
-from tools.cds_source import get_cds_source
-from tools.metadata_extension_source import get_metadata_extension_source
-from tools.table_contents import get_table_contents
-from tools.sql_query import get_sql_query
-from tools.enhancements import get_enhancements
-from tools.btp_tools import (
+from src.tools.function_group_source import get_function_group_source
+from src.tools.cds_source import get_cds_source
+from src.tools.class_source import get_class_source
+from src.tools.behavior_definition_source import get_behavior_definition_source
+from src.tools.function_source import get_function_source
+from src.tools.include_source import get_include_source
+from src.tools.interface_source import get_interface_source
+from src.tools.package_structure import get_package_structure
+from src.tools.program_source import get_program_source
+from src.tools.structure_source import get_structure_source
+from src.tools.table_source import get_table_source
+from src.tools.transaction_properties import get_transaction_properties
+from src.tools.type_info import get_type_info
+from src.tools.search_objects import get_search_objects
+from src.tools.usage_references import get_usage_references
+from src.tools.metadata_extension_source import get_metadata_extension_source
+from src.tools.table_contents import get_table_contents
+from src.tools.sql_query import get_sql_query
+from src.tools.enhancements import get_enhancements
+from src.tools.btp_tools import (
     generate_env_from_service_key_file,
     generate_env_from_service_key_json,
     parse_btp_service_key,
@@ -29,11 +30,40 @@ from tools.btp_tools import (
 
 from dotenv import load_dotenv
 
+# Parse command line arguments
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="MCP ADT Server for SAP ABAP Development Tools",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        '--env',
+        default='.env',
+        help='Path to environment file (default: .env)'
+    )
+    parser.add_argument(
+        '--transport',
+        default='stdio',
+        choices=['stdio', 'http'],
+        help='Transport protocol (default: stdio)'
+    )
+    return parser.parse_args()
+
+# Load environment variables from specified file
+def load_environment(env_file_path):
+    """Load environment variables from the specified file."""
+    if os.path.exists(env_file_path):
+        load_dotenv(env_file_path)
+        print(f"[+] Loaded environment from: {env_file_path}")
+    else:
+        print(f"[!] Environment file not found: {env_file_path}")
+        print("    Using system environment variables only")
+
 mcp = FastMCP("ADT Server")  # Initialize an MCP server instance with a descriptive name
 
 @mcp.tool()
 def get_function_group_source_mcp(function_group: str) -> list[str]:
-   return get_behavior_definition_source(function_group)
+   return get_function_group_source(function_group)
 
 @mcp.tool()
 def get_cds_source_mcp(cds_name: str) -> list[str]:
@@ -49,7 +79,6 @@ def get_behavior_definition_source_mcp(behavior_name: str) -> list[str]:
 
 @mcp.tool()
 def get_function_source_mcp(function_group: str,function_name: str) -> list[str]:
-    return get_function_source(function_group, function_name)
     """ Tool: get_function_source
          Description:
            Retrieve source code lines for an ABAP function module via ADT,
@@ -59,6 +88,7 @@ def get_function_source_mcp(function_group: str,function_name: str) -> list[str]
            • function_name  (string) - Function module name (e.g. ZFUNC_MODULE)
         Required:
            [ "function_group", "function_name" ]"""
+    return get_function_source(function_group, function_name)
     
 
 @mcp.tool()
@@ -83,7 +113,7 @@ def get_program_source_mcp( program_name: str) -> list[str]:
 
 @mcp.tool()
 def get_search_objects_mcp(query: str, max_results: int = 10) -> list[dict]:
-    return get_search_objects(query, max_results=10)
+    return get_search_objects(query, max_results=max_results)
 
 @mcp.tool()
 def get_structure_source_mcp(structure_name: str) -> list[str]:
@@ -224,4 +254,12 @@ def get_btp_connection_status_mcp() -> str:
     return get_btp_connection_status()
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")  
+    # Parse command line arguments
+    args = parse_args()
+    
+    # Load environment variables from specified file
+    load_environment(args.env)
+    
+    # Run the MCP server
+    print(f"[*] Starting MCP ADT Server with transport: {args.transport}")
+    mcp.run(transport=args.transport)  

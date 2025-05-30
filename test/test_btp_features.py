@@ -6,8 +6,8 @@ Tests JWT authentication, service key parsing, and .env generation.
 import os
 import json
 import tempfile
-from tools.btp_utils import BtpServiceKey, generate_env_from_service_key
-from tools.btp_tools import (
+from src.tools.btp_utils import BtpServiceKey, generate_env_from_service_key
+from src.tools.btp_tools import (
     parse_btp_service_key,
     generate_env_from_service_key_json,
     get_btp_connection_status

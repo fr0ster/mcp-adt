@@ -12,21 +12,21 @@ def test_imports():
     print("Testing imports...")
     
     try:
-        from tools.table_contents import get_table_contents
+        from src.tools.table_contents import get_table_contents
         print("SUCCESS: table_contents.py imported successfully")
     except Exception as e:
         print(f"FAILED: Failed to import table_contents: {e}")
         return False
     
     try:
-        from tools.sql_query import get_sql_query
+        from src.tools.sql_query import get_sql_query
         print("SUCCESS: sql_query.py imported successfully")
     except Exception as e:
         print(f"FAILED: Failed to import sql_query: {e}")
         return False
     
     try:
-        from tools.enhancements import get_enhancements
+        from src.tools.enhancements import get_enhancements
         print("SUCCESS: enhancements.py imported successfully")
     except Exception as e:
         print(f"FAILED: Failed to import enhancements: {e}")

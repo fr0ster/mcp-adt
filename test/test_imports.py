@@ -5,9 +5,9 @@ Test script to verify all imports work correctly
 
 try:
     # Test new modules
-    from tools.table_contents import get_table_contents_definition
-    from tools.sql_query import get_sql_query_definition  
-    from tools.enhancements import get_enhancements_definition
+    from src.tools.table_contents import get_table_contents_definition
+    from src.tools.sql_query import get_sql_query_definition  
+    from src.tools.enhancements import get_enhancements_definition
     
     print("✅ All new modules imported successfully!")
     
