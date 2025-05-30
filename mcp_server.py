@@ -17,6 +17,9 @@ from tools.search_objects import get_search_objects
 from tools.usage_references import get_usage_references
 from tools.cds_source import get_cds_source
 from tools.metadata_extension_source import get_metadata_extension_source
+from tools.table_contents import get_table_contents
+from tools.sql_query import get_sql_query
+from tools.enhancements import get_enhancements
 
 from dotenv import load_dotenv
 
@@ -109,6 +112,39 @@ def get_usage_references_mcp(object_type: str, object_name: str,function_group =
           Function group name (required if object_type is 'function_module')
        Required: [ "object_type", "object_name" ]"""
     return get_usage_references(object_type, object_name, function_group)
+
+@mcp.tool()
+def get_table_contents_mcp(table_name: str, max_rows: int = 100) -> dict:
+    """Tool: get_table_contents
+       Description:
+         Retrieve table contents via ADT Data Preview API with proper SQL generation.
+       Parameters (object):
+         table_name (string): Name of the ABAP table (e.g. 'T000')
+         max_rows (integer): Maximum number of rows to retrieve (default: 100)
+       Required: [ "table_name" ]"""
+    return get_table_contents(table_name, max_rows)
+
+@mcp.tool()
+def get_sql_query_mcp(sql_query: str, max_rows: int = 100) -> dict:
+    """Tool: get_sql_query
+       Description:
+         Execute freestyle SQL queries via SAP ADT Data Preview API.
+       Parameters (object):
+         sql_query (string): SQL query to execute (e.g. 'SELECT * FROM T000 WHERE MANDT = 100')
+         max_rows (integer): Maximum number of rows to return (default: 100)
+       Required: [ "sql_query" ]"""
+    return get_sql_query(sql_query, max_rows)
+
+@mcp.tool()
+def get_enhancements_mcp(object_name: str, program: str = None) -> dict:
+    """Tool: get_enhancements
+       Description:
+         Retrieve enhancement implementations for ABAP programs/includes with auto-detection of object type.
+       Parameters (object):
+         object_name (string): Name of the ABAP program or include (e.g. 'RSPARAM' or 'RSBTABSP')
+         program (string): Optional manual program context for includes (if auto-detection fails)
+       Required: [ "object_name" ]"""
+    return get_enhancements(object_name, program)
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")  
