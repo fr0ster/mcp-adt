@@ -56,8 +56,23 @@ class MCPTestClient:
     def stop_server(self):
         """Stop the MCP server process."""
         if self.process:
-            self.process.terminate()
-            self.process.wait()
+            # Close all pipes first to avoid hanging
+            if self.process.stdin:
+                self.process.stdin.close()
+            if self.process.stdout:
+                self.process.stdout.close()
+            if self.process.stderr:
+                self.process.stderr.close()
+                
+            # Terminate and kill the process
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                print("[!] Process did not terminate gracefully, killing...")
+                self.process.kill()
+                self.process.wait()
+                
             print("[+] Server stopped")
     
     def send_request(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
@@ -91,12 +106,34 @@ class MCPTestClient:
         self.process.stdin.write(request_json)
         self.process.stdin.flush()
         
-        # Read response
-        response_line = self.process.stdout.readline()
-        if not response_line:
-            stderr = self.process.stderr.read()
-            raise RuntimeError(f"No response from server. Error: {stderr}")
+        # Set a timeout for response reading
+        import time
         
+        start_time = time.time()
+        timeout = 5.0  # 5 seconds timeout
+        
+        # Read with timeout - we'll poll stdout
+        while True:
+            # Check if we've exceeded the timeout
+            if time.time() - start_time > timeout:
+                print("[!] Timeout waiting for response")
+                stderr = self.process.stderr.read() if self.process.stderr else "No stderr available"
+                raise RuntimeError(f"Timeout waiting for server response. Error: {stderr}")
+                
+            # Check if there's data available
+            if self.process.poll() is not None:
+                # Process has terminated
+                stderr = self.process.stderr.read() if self.process.stderr else "No stderr available"
+                raise RuntimeError(f"Server process terminated unexpectedly. Error: {stderr}")
+            
+            # Try to read a line if available
+            response_line = self.process.stdout.readline()
+            if response_line:
+                break
+                
+            # Short sleep to prevent CPU spinning
+            time.sleep(0.1)
+            
         print(f"📥 Received: {response_line.strip()}")
         
         try:
@@ -126,12 +163,18 @@ class MCPTestClient:
     
     def list_tools(self):
         """List available tools."""
-        response = self.send_request("tools/list")
-        
-        if "error" in response:
-            raise RuntimeError(f"Failed to list tools: {response['error']}")
-        
-        return response.get("result", {}).get("tools", [])
+        print("[DEBUG] Sending tools/list request")
+        try:
+            response = self.send_request("tools/list")
+            
+            if "error" in response:
+                raise RuntimeError(f"Failed to list tools: {response['error']}")
+            
+            print("[DEBUG] Successfully received tools list")
+            return response.get("result", {}).get("tools", [])
+        except Exception as e:
+            print(f"[DEBUG] Exception in list_tools: {e}")
+            raise
     
     def call_tool(self, tool_name: str, arguments: Dict[str, Any] = None):
         """Call a specific tool.
@@ -239,6 +282,13 @@ def main():
         return 1
     
     finally:
+        try:
+            # Try to send a shutdown request before stopping
+            client.send_request("shutdown", {})
+            print("Sent shutdown request to server")
+        except Exception as e:
+            print(f"Failed to send shutdown request: {e}")
+            
         client.stop_server()
     
     return 0

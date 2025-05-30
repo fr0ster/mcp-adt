@@ -2,7 +2,7 @@
 BTP-specific MCP tools for service key parsing and .env generation.
 """
 
-from tools.btp_utils import (
+from src.tools.btp_utils import (
     parse_service_key_file,
     parse_service_key_string,
     generate_env_from_service_key,
@@ -137,7 +137,7 @@ def get_btp_connection_status() -> str:
         Current BTP configuration status
     """
     try:
-        from tools.utils import SAP_URL, SAP_AUTH_TYPE, SAP_JWT_TOKEN, SAP_USER, VERIFY_SSL, TIMEOUT
+        from src.tools.utils import SAP_URL, SAP_AUTH_TYPE, SAP_JWT_TOKEN, SAP_USER, VERIFY_SSL, TIMEOUT
         
         status = {
             "sap_url": SAP_URL,
