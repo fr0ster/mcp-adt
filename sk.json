@@ -1,0 +1,39 @@
+{
+    "url": "https://11b69711-9bcb-491b-b504-a9ba7e4b7e97.abap.us10.hana.ondemand.com",
+    "binding": {
+        "env": "cf",
+        "id": "47c56880-4e36-46d3-9d22-5c086d0910e9",
+        "type": "oauth",
+        "version": "1.0.1.1"
+    },
+    "catalogs": {
+        "abap": {
+            "path": "/sap/opu/odata/IWFND/CATALOGSERVICE;v=2",
+            "type": "sap_abap_catalog_v1"
+        }
+    },
+    "endpoints": {
+        "abap": "https://11b69711-9bcb-491b-b504-a9ba7e4b7e97.abap.us10.hana.ondemand.com"
+    },
+    "preserve_host_header": true,
+    "sap.cloud.service": "com.sap.cloud.abap",
+    "systemid": "TRL",
+    "uaa": {
+        "clientid": "sb-e00a594f-c57f-4614-a75d-e8c4756ed26a!b434325|abap-trial-service-broker!b3132",
+        "clientsecret": "47c56880-4e36-46d3-9d22-5c086d0910e9$3uK4sJdtaDJKPC8hASsXjfA6JY8DJu62NAdIeWL9oms=",
+        "url": "https://2dad4c07trial.authentication.us10.hana.ondemand.com",
+        "identityzone": "2dad4c07trial",
+        "identityzoneid": "60f23921-d697-4ddf-b125-bab7bc58d23b",
+        "tenantid": "60f23921-d697-4ddf-b125-bab7bc58d23b",
+        "tenantmode": "dedicated",
+        "sburl": "https://internal-xsuaa.authentication.us10.hana.ondemand.com",
+        "apiurl": "https://api.authentication.us10.hana.ondemand.com",
+        "verificationkey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr8ee4rz/XECJEnFAPr4s\nfqesl/oBmozlntiB+WmUPijs16AB+3A6T+cmErnoOcWITyGYnqfGepPcCPd5eD6o\ng6seB6p5y6dT4+jxyiDAZjgwmluQ0aQrwMzYzGkMCl+n++nghdy02mwkjBbnFS9G\nPx8lCcLiogT0cqy4YKRbu5sFQt8fzri5NdVJIJWmo1GXCP3GVApLWjvpgupjvxco\nm5FsAHeEN1hRNIlnYFugN4W0b07AjEHe96Mgqd/iG/pYWlVLRKnPWvy8JY3OysH7\n3jBEKxu6LJNrGqqXS51q/p0hyBUBRl90WOGgJrCxuxG1NBhAJiKV46C1uyLZVrOC\ngQIDAQAB\n-----END PUBLIC KEY-----",
+        "xsappname": "e00a594f-c57f-4614-a75d-e8c4756ed26a!b434325|abap-trial-service-broker!b3132",
+        "subaccountid": "60f23921-d697-4ddf-b125-bab7bc58d23b",
+        "uaadomain": "authentication.us10.hana.ondemand.com",
+        "zoneid": "60f23921-d697-4ddf-b125-bab7bc58d23b",
+        "credential-type": "binding-secret",
+        "serviceInstanceId": "e00a594f-c57f-4614-a75d-e8c4756ed26a"
+    }
+}

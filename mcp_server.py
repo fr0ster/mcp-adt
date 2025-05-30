@@ -20,6 +20,12 @@ from tools.metadata_extension_source import get_metadata_extension_source
 from tools.table_contents import get_table_contents
 from tools.sql_query import get_sql_query
 from tools.enhancements import get_enhancements
+from tools.btp_tools import (
+    generate_env_from_service_key_file,
+    generate_env_from_service_key_json,
+    parse_btp_service_key,
+    get_btp_connection_status
+)
 
 from dotenv import load_dotenv
 
@@ -145,6 +151,77 @@ def get_enhancements_mcp(object_name: str, program: str = None) -> dict:
          program (string): Optional manual program context for includes (if auto-detection fails)
        Required: [ "object_name" ]"""
     return get_enhancements(object_name, program)
+
+@mcp.tool()
+def generate_env_from_service_key_file_mcp(
+    service_key_file: str,
+    username: str,
+    password: str,
+    output_file: str = "btp_generated.env",
+    use_jwt: bool = True,
+    verify_ssl: bool = True,
+    timeout: int = 30
+) -> str:
+    """Tool: generate_env_from_service_key_file
+       Description:
+         Generate .env configuration file from BTP service key file for SAP connection setup.
+       Parameters (object):
+         service_key_file (string): Path to the BTP service key JSON file
+         username (string): BTP username for authentication
+         password (string): BTP password for authentication
+         output_file (string): Output .env file name (default: btp_generated.env)
+         use_jwt (boolean): Use JWT authentication instead of basic auth (default: true)
+         verify_ssl (boolean): Verify SSL certificates (default: true)
+         timeout (integer): Request timeout in seconds (default: 30)
+       Required: [ "service_key_file", "username", "password" ]"""
+    return generate_env_from_service_key_file(
+        service_key_file, username, password, output_file, use_jwt, verify_ssl, timeout
+    )
+
+@mcp.tool()
+def generate_env_from_service_key_json_mcp(
+    service_key_json: str,
+    username: str,
+    password: str,
+    output_file: str = "btp_generated.env",
+    use_jwt: bool = True,
+    verify_ssl: bool = True,
+    timeout: int = 30
+) -> str:
+    """Tool: generate_env_from_service_key_json
+       Description:
+         Generate .env configuration file from BTP service key JSON string for SAP connection setup.
+       Parameters (object):
+         service_key_json (string): BTP service key as JSON string
+         username (string): BTP username for authentication
+         password (string): BTP password for authentication
+         output_file (string): Output .env file name (default: btp_generated.env)
+         use_jwt (boolean): Use JWT authentication instead of basic auth (default: true)
+         verify_ssl (boolean): Verify SSL certificates (default: true)
+         timeout (integer): Request timeout in seconds (default: 30)
+       Required: [ "service_key_json", "username", "password" ]"""
+    return generate_env_from_service_key_json(
+        service_key_json, username, password, output_file, use_jwt, verify_ssl, timeout
+    )
+
+@mcp.tool()
+def parse_btp_service_key_mcp(service_key_input: str) -> str:
+    """Tool: parse_btp_service_key
+       Description:
+         Parse and analyze a BTP service key to extract connection information.
+       Parameters (object):
+         service_key_input (string): Either a file path to service key JSON or the JSON string itself
+       Required: [ "service_key_input" ]"""
+    return parse_btp_service_key(service_key_input)
+
+@mcp.tool()
+def get_btp_connection_status_mcp() -> str:
+    """Tool: get_btp_connection_status
+       Description:
+         Check current BTP connection configuration and authentication status.
+       Parameters: None
+       Required: []"""
+    return get_btp_connection_status()
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")  
