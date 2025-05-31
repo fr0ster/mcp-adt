@@ -13,7 +13,76 @@ python mcp_server.py
 python /full/path/to/mcp-adt/mcp_server.py
 ```
 
+### 3. Run with custom environment file
+```bash
+python mcp_server.py --env btp_02.env
+```
+
+## Transport Options
+
+The MCP ADT Server supports multiple transport protocols:
+
+### STDIO Transport (Default)
+- **Use case**: Standard MCP client connections (Claude Desktop, etc.)
+- **Pros**: Standard MCP protocol, works with all MCP clients
+- **Cons**: Harder to debug, binary communication
+
+```bash
+python mcp_server.py --transport stdio
+# or simply:
+python mcp_server.py
+```
+
+### SSE Transport
+- **Use case**: Web-based MCP clients, browser integration
+- **Pros**: Real-time streaming, web-compatible
+- **Cons**: Requires web server setup
+
+```bash
+python mcp_server.py --transport sse
+```
+
+### Streamable HTTP Transport
+- **Use case**: HTTP-based MCP clients, API integration
+- **Pros**: HTTP-compatible, easy to integrate
+- **Cons**: Less efficient than STDIO
+
+```bash
+python mcp_server.py --transport streamable-http
+```
+
 ## MCP Client Configuration
+
+### Cline (VSCode Extension) - SSE Transport
+
+1. **Start the SSE server:**
+   ```bash
+   python mcp_server.py --transport sse
+   # Server will start on http://127.0.0.1:8000
+   ```
+
+2. **Configure Cline MCP settings:**
+   - Open VSCode
+   - Go to Cline extension settings
+   - Add MCP server configuration:
+   ```json
+   {
+     "mcpServers": {
+       "adt-server": {
+         "url": "http://127.0.0.1:8000/messages/",
+         "transport": "sse"
+       }
+     }
+   }
+   ```
+
+3. **Alternative: Use Cline's MCP Server Manager:**
+   - Open Cline chat
+   - Click on "MCP" button
+   - Add new server:
+     - **Name**: `adt-server`
+     - **URL**: `http://127.0.0.1:8000/messages/`
+     - **Transport**: `SSE`
 
 ### Claude Desktop (Windows)
 File: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -81,7 +150,7 @@ python /path/to/mcp-adt/test_remote_connection.py
 ### Manual test
 ```bash
 # Start the server
-python /path/to/mcp-adt/mcp_server.py --transport stdio
+python /path/to/mcp-adt/mcp_server.py
 
 # Check logs
 cat /path/to/mcp-adt/mcp_server.log

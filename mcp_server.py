@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument(
         '--transport',
         default='stdio',
-        choices=['stdio', 'http'],
+        choices=['stdio', 'sse', 'streamable-http'],
         help='Transport protocol (default: stdio)'
     )
     return parser.parse_args()

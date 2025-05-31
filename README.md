@@ -6,6 +6,8 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
 
 **📚 Quick Start**: See [QUICK_START.md](doc/QUICK_START.md) for immediate setup instructions.
 
+**🔌 Client Connections**: See [MCP_CLIENT_CONNECTIONS.md](doc/MCP_CLIENT_CONNECTIONS.md) for connecting to Cline, Claude Desktop, and other MCP clients.
+
 **📖 Documentation**: Complete documentation is available in the [doc/](doc/) folder.
 
 ---
@@ -27,6 +29,8 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
    ```
 
    **Note**: The MCP server can now be run from any directory, not just the project directory. See [REMOTE_CONNECTION_GUIDE.md](doc/REMOTE_CONNECTION_GUIDE.md) for details.
+
+   **Transport Options**: The server supports multiple transport protocols: STDIO (default), SSE, and Streamable HTTP.
 
 2. **Create and activate a virtual environment**
 

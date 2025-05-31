@@ -8,6 +8,8 @@ This folder contains all documentation for MCP ADT Server.
 - **[QUICK_START.md](QUICK_START.md)** - Quick instructions to get started
 
 ### Main Documentation
+- **[MCP_CLIENT_CONNECTIONS.md](MCP_CLIENT_CONNECTIONS.md)** - Complete guide for connecting to different MCP clients (Cline, Claude Desktop, etc.)
+- **[CONSOLE_TESTING.md](CONSOLE_TESTING.md)** - Console testing and curl command guide
 - **[REMOTE_CONNECTION_GUIDE.md](REMOTE_CONNECTION_GUIDE.md)** - Detailed guide for connecting from different directories
 - **[DEBUG_GUIDE.md](DEBUG_GUIDE.md)** - Debugging and troubleshooting guide
 - **[BTP_INTEGRATION_GUIDE.md](BTP_INTEGRATION_GUIDE.md)** - SAP BTP integration
