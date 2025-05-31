@@ -1,4 +1,4 @@
-# tools/table_contents.py
+# tools/table_contents_fixed.py
 
 import xmltodict
 from typing import Dict, List, Any, Optional
@@ -28,8 +28,7 @@ get_table_contents_definition = {
 
 def _get_table_fields(table_name: str, session) -> List[str]:
     """
-    Get table field list from CDS source or table structure.
-    Returns list of field names for SQL generation.
+    Get table field list from CDS source.
     """
     print(f"Getting field list for table {table_name}")
     
@@ -52,60 +51,19 @@ def _get_table_fields(table_name: str, session) -> List[str]:
                 # Look for field definitions - pattern: fieldname : type;
                 if ':' in line and ';' in line and not line.startswith('//'):
                     field_part = line.split(':')[0].strip()
-                    if field_part and not field_part.startswith('@') and not field_part.startswith('key'):
+                    if field_part and not field_part.startswith('@'):
                         # Remove 'key' prefix if present
                         if field_part.startswith('key '):
                             field_part = field_part[4:].strip()
-                        fields.append(field_part.upper())
+                        if field_part:
+                            fields.append(field_part.upper())
             
             if fields:
-                print(f"Found {len(fields)} fields from CDS source")
+                print(f"Found {len(fields)} fields from CDS source: {fields}")
                 return fields
                 
     except Exception as e:
         print(f"Failed to get CDS source: {e}")
-    
-    # Fallback: try to get table structure
-    try:
-        table_url = f"{SAP_URL.rstrip('/')}/sap/bc/adt/ddic/tables/{table_name}/source/main"
-        resp = session.get(
-            table_url,
-            params={"sap-client": SAP_CLIENT},
-            headers={"Accept": "application/vnd.sap.adt.abapsource+xml"}
-        )
-        
-        if resp.status_code == 200:
-            # Parse table structure XML
-            doc = xmltodict.parse(resp.text)
-            lines = doc.get('adtcore:abapsource', {}).get('objectSource', {}).get('line', [])
-            
-            fields = []
-            in_structure = False
-            
-            if isinstance(lines, list):
-                for line_obj in lines:
-                    line = line_obj.get('#text', '') if isinstance(line_obj, dict) else str(line_obj)
-                    line = line.strip()
-                    
-                    if 'begin of' in line.lower() or 'data:' in line.lower():
-                        in_structure = True
-                        continue
-                    elif 'end of' in line.lower():
-                        break
-                    elif in_structure and line and not line.startswith('*'):
-                        # Extract field name from ABAP declaration
-                        parts = line.split()
-                        if len(parts) > 0:
-                            field_name = parts[0].rstrip(',').upper()
-                            if field_name and field_name not in ['DATA', 'TYPES']:
-                                fields.append(field_name)
-            
-            if fields:
-                print(f"Found {len(fields)} fields from table structure")
-                return fields
-                
-    except Exception as e:
-        print(f"Failed to get table structure: {e}")
     
     # Ultimate fallback: return empty list to use SELECT *
     print("Using fallback - SELECT * approach")
@@ -114,7 +72,7 @@ def _get_table_fields(table_name: str, session) -> List[str]:
 def _generate_sql_query(table_name: str, fields: List[str]) -> str:
     """
     Generate SQL SELECT statement with table-prefixed field names.
-    Format: SELECT T000~MANDT, T000~FIELD2, ... FROM T000
+    Format: SELECT TABLE~FIELD1, TABLE~FIELD2, ... FROM TABLE
     """
     if not fields:
         return f"SELECT * FROM {table_name}"

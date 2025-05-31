@@ -137,8 +137,28 @@ def get_sql_query(sql_query: str, max_rows: int = 100) -> Dict[str, Any]:
         }
         headers = {
             "Content-Type": "text/plain; charset=utf-8",
-            "Accept": "application/vnd.sap.adt.datapreview.v1+xml"
+            "Accept": "application/vnd.sap.adt.datapreview.table.v1+xml"
         }
+        
+        # Get CSRF token first
+        csrf_url = f"{SAP_URL.rstrip('/')}/sap/bc/adt/discovery"
+        csrf_resp = session.get(
+            csrf_url,
+            headers={"x-csrf-token": "fetch", "Accept": "application/atomsvc+xml"},
+            timeout=10
+        )
+        
+        token = csrf_resp.headers.get("x-csrf-token")
+        if not token:
+            raise ConnectionError("No CSRF token in response headers")
+        
+        # Add CSRF token to headers
+        headers["x-csrf-token"] = token
+        
+        # Add cookies if available
+        if session.cookies:
+            auto_cookies = "; ".join([f"{cookie.name}={cookie.value}" for cookie in session.cookies])
+            headers["Cookie"] = auto_cookies
         
         print(f"Making POST request to: {endpoint}")
         

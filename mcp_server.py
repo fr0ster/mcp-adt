@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from mcp.server.fastmcp import FastMCP  # Import FastMCP, the quickstart server base
 
@@ -18,7 +19,7 @@ from src.tools.type_info import get_type_info
 from src.tools.search_objects import get_search_objects
 from src.tools.usage_references import get_usage_references
 from src.tools.metadata_extension_source import get_metadata_extension_source
-from src.tools.table_contents import get_table_contents
+from src.tools.table_contents_fixed import get_table_contents
 from src.tools.sql_query import get_sql_query
 from src.tools.enhancements import get_enhancements
 from src.tools.btp_tools import (
@@ -59,11 +60,29 @@ def load_environment(env_file_path):
         print(f"[!] Environment file not found: {env_file_path}")
         print("    Using system environment variables only")
 
+# Setup logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('mcp_server.log')
+    ]
+)
+logger = logging.getLogger(__name__)
+
 mcp = FastMCP("ADT Server")  # Initialize an MCP server instance with a descriptive name
 
 @mcp.tool()
 def get_function_group_source_mcp(function_group: str) -> list[str]:
-   return get_function_group_source(function_group)
+    logger.info(f"[TOOL] get_function_group_source_mcp called with function_group: {function_group}")
+    try:
+        result = get_function_group_source(function_group)
+        logger.info(f"[TOOL] get_function_group_source_mcp completed successfully - returned {len(result) if result else 0} lines")
+        return result
+    except Exception as e:
+        logger.error(f"[ERROR] Error in get_function_group_source_mcp: {e}")
+        raise
 
 @mcp.tool()
 def get_cds_source_mcp(cds_name: str) -> list[str]:
@@ -260,6 +279,20 @@ if __name__ == "__main__":
     # Load environment variables from specified file
     load_environment(args.env)
     
+    # Log server initialization
+    logger.info("[INIT] Initializing MCP ADT Server")
+    logger.info(f"[INIT] Transport: {args.transport}")
+    logger.info(f"[INIT] Environment file: {args.env}")
+    
+    # FastMCP doesn't expose _tools directly, so we'll log this after startup
+    logger.info("[INIT] Server configured with all tools")
+    
     # Run the MCP server
     print(f"[*] Starting MCP ADT Server with transport: {args.transport}")
-    mcp.run(transport=args.transport)  
+    logger.info("[INIT] Server starting...")
+    
+    try:
+        mcp.run(transport=args.transport)
+    except Exception as e:
+        logger.error(f"[ERROR] Server failed to start: {e}")
+        raise

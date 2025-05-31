@@ -1,6 +1,7 @@
 import xmltodict
+import time
 from requests.exceptions import HTTPError, RequestException
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT, SAP_AUTH_TYPE
 
 # JSON schema for Gemini function‐calling
 get_package_structure_definition = {
@@ -18,86 +19,138 @@ get_package_structure_definition = {
     }
 }
 
-def get_package_structure(
-    package_name: str
-) -> list[dict]:
+def get_package_structure(package_name: str) -> list[dict]:
     """
     Fetches the structure (objects) under an ABAP package via ADT.
-
-    - First does a GET with X-CSRF-Token: Fetch to retrieve the token.
-    - Then POSTs to /sap/bc/adt/repository/nodestructure?parent_type=DEVC/K&parent_name=...
-      including the X-CSRF-Token header.
-    - Parses the returned XML into a list of dicts with keys:
-      OBJECT_TYPE, OBJECT_NAME, OBJECT_DESCRIPTION, OBJECT_URI.
-    - Raises AdtError on HTTP errors; ConnectionError on network failures.
+    
+    Working version using requests automatic cookie handling.
+    Fixed the cookie issue: use only cookie values without path, secure, HttpOnly attributes.
+    
+    Args:
+        package_name: Name of the ABAP package (e.g. 'ZMY_PACKAGE')
+    
+    Returns:
+        List of dictionaries with keys: OBJECT_TYPE, OBJECT_NAME, OBJECT_DESCRIPTION, OBJECT_URI
+    
+    Raises:
+        ValueError: If package_name is empty
+        AdtError: On HTTP errors
+        ConnectionError: On network failures
     """
     print(f"Fetching package structure for {package_name}")
     if not package_name:
         raise ValueError("package_name is required")
 
     session = make_session()
-    endpoint = f"{SAP_URL.rstrip('/')}/sap/bc/adt/repository/nodestructure"
+    base_url = SAP_URL.rstrip('/')
+    endpoint = f"{base_url}/sap/bc/adt/repository/nodestructure"
+    
     params = {
-        "sap-client":          SAP_CLIENT,
-        "parent_type":         "DEVC/K",
-        "parent_name":         package_name,
-        "withShortDescriptions": "true"
+        "parent_type": "DEVC/K",
+        "parent_name": package_name,
+        "withShortDescriptions": True
     }
-
-    # 1) Fetch CSRF token via a GET
+    
+    headers = {
+        "Accept": "application/vnd.sap.as+xml; charset=utf-8; dataname=com.sap.adt.RepositoryObjectTreeContent"
+    }
+    
+    print(f"Endpoint: {endpoint}")
+    print(f"Parameters: {params}")
+    
     try:
-        fetch_resp = session.get(
-            endpoint,
-            params=params,
-            headers={"X-CSRF-Token": "Fetch", "Accept": "*/*"}
+        # Отримуємо CSRF токен
+        csrf_url = f"{base_url}/sap/bc/adt/discovery"
+        csrf_resp = session.get(
+            csrf_url,
+            headers={"x-csrf-token": "fetch", "Accept": "application/atomsvc+xml"},
+            timeout=10
         )
-        # even if fetch_resp.status_code is 405 or 404, it may still return the token header
-        token = fetch_resp.headers.get("X-CSRF-Token")
-    except RequestException as e:
-        raise ConnectionError(f"Failed to fetch CSRF token: {e}") from e
-
-    # 2) Now POST with that token (if present)
-    post_headers = {}
-    if token:
-        post_headers["X-CSRF-Token"] = token
-
-    try:
+        
+        token = csrf_resp.headers.get("x-csrf-token")
+        print(f"CSRF token: {token}")
+        
+        if not token:
+            raise ConnectionError("No CSRF token in response headers")
+        
+        headers_with_csrf = headers.copy()
+        headers_with_csrf["x-csrf-token"] = token
+        
+        # КЛЮЧОВЕ ВИПРАВЛЕННЯ: Використовуємо requests автоматичні cookies 
+        # (БЕЗ атрибутів path, secure, HttpOnly)
+        if session.cookies:
+            auto_cookies = "; ".join([f"{cookie.name}={cookie.value}" for cookie in session.cookies])
+            headers_with_csrf["Cookie"] = auto_cookies
+            print(f"Auto cookies: {len(auto_cookies)} chars")
+        
+        # Add client header if needed
+        if SAP_CLIENT:
+            headers_with_csrf["X-SAP-Client"] = SAP_CLIENT
+        
+        print(f"Headers: {list(headers_with_csrf.keys())}")
+        
+        # POST запит
         resp = session.post(
             endpoint,
             params=params,
-            headers=post_headers
+            headers=headers_with_csrf,
+            timeout=30
         )
-        resp.raise_for_status()
+        
+        print(f"Response status: {resp.status_code}")
+        print(f"Response content-type: {resp.headers.get('content-type')}")
+        print(f"Response length: {len(resp.text)}")
+        
+        if resp.status_code != 200:
+            if resp.status_code == 404:
+                raise AdtError(404, f"Package '{package_name}' not found")
+            elif resp.status_code == 403:
+                raise AdtError(403, f"Access forbidden: {resp.text}")
+            else:
+                raise AdtError(resp.status_code, f"HTTP {resp.status_code}: {resp.text}")
+        
+        print("Successfully received response!")
+        
+        # Парсимо XML
+        print(f"Parsing XML response...")
+        doc = xmltodict.parse(resp.text)
+        nodes = (
+            doc.get("asx:abap", {})
+               .get("asx:values", {})
+               .get("DATA", {})
+               .get("TREE_CONTENT", {})
+               .get("SEU_ADT_REPOSITORY_OBJ_NODE", [])
+        )
+        
+        # Handle both single node and array of nodes
+        items = nodes if isinstance(nodes, list) else [nodes] if nodes else []
+        print(f"Found {len(items)} items in package")
+
+        # Extract and filter
+        result = []
+        for n in items:
+            name = n.get("OBJECT_NAME")
+            uri = n.get("OBJECT_URI")
+            if not name or not uri:
+                continue
+            result.append({
+                "OBJECT_TYPE": n.get("OBJECT_TYPE"),
+                "OBJECT_NAME": name,
+                "OBJECT_DESCRIPTION": n.get("DESCRIPTION"),
+                "OBJECT_URI": uri
+            })
+
+        print(f"Successfully extracted {len(result)} objects from package {package_name}")
+        return result
+        
     except HTTPError as e:
-        if resp.status_code == 404:
+        if e.response.status_code == 404:
             raise AdtError(404, f"Package '{package_name}' not found") from e
-        if resp.status_code == 403:
-            raise AdtError(403, "Access forbidden: CSRF token missing or invalid") from e
-        raise
-
-    # 3) Parse the XML
-    doc = xmltodict.parse(resp.text)
-    nodes = (
-        doc.get("asx:abap", {})
-           .get("asx:values", {})
-           .get("DATA", {})
-           .get("TREE_CONTENT", {})
-           .get("SEU_ADT_REPOSITORY_OBJ_NODE", [])
-    )
-    items = nodes if isinstance(nodes, list) else [nodes]
-
-    # 4) Extract and filter
-    result = []
-    for n in items:
-        name = n.get("OBJECT_NAME")
-        uri  = n.get("OBJECT_URI")
-        if not name or not uri:
-            continue
-        result.append({
-            "OBJECT_TYPE":        n.get("OBJECT_TYPE"),
-            "OBJECT_NAME":        name,
-            "OBJECT_DESCRIPTION": n.get("DESCRIPTION"),
-            "OBJECT_URI":         uri
-        })
-
-    return result
+        elif e.response.status_code == 403:
+            raise AdtError(403, f"Access forbidden: {e.response.text}") from e
+        else:
+            raise AdtError(e.response.status_code, f"HTTP error: {e.response.text}") from e
+    except RequestException as e:
+        raise ConnectionError(f"Network error: {e}") from e
+    except Exception as e:
+        raise AdtError(500, f"Unexpected error: {e}") from e
