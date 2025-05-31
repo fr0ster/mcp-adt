@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append('src')
 
-from tools.table_contents_fixed import get_table_contents
+from tools.table_contents import get_table_contents
 
 def test_zok_d_phase():
     """Test reading ZOK_D_PHASE table contents"""

@@ -19,7 +19,7 @@ from src.tools.type_info import get_type_info
 from src.tools.search_objects import get_search_objects
 from src.tools.usage_references import get_usage_references
 from src.tools.metadata_extension_source import get_metadata_extension_source
-from src.tools.table_contents_fixed import get_table_contents
+from src.tools.table_contents import get_table_contents
 from src.tools.sql_query import get_sql_query
 from src.tools.enhancements import get_enhancements
 from src.tools.btp_tools import (
