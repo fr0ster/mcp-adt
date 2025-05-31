@@ -1,7 +1,13 @@
 import argparse
 import logging
 import os
+import sys
+from pathlib import Path
 from mcp.server.fastmcp import FastMCP  # Import FastMCP, the quickstart server base
+
+# Add the project root to Python path to ensure imports work from any directory
+project_root = Path(__file__).parent.absolute()
+sys.path.insert(0, str(project_root))
 
 from src.tools.function_group_source import get_function_group_source
 from src.tools.cds_source import get_cds_source
@@ -53,6 +59,10 @@ def parse_args():
 # Load environment variables from specified file
 def load_environment(env_file_path):
     """Load environment variables from the specified file."""
+    # If path is relative, make it relative to project root
+    if not os.path.isabs(env_file_path):
+        env_file_path = project_root / env_file_path
+    
     if os.path.exists(env_file_path):
         load_dotenv(env_file_path)
         print(f"[+] Loaded environment from: {env_file_path}")
@@ -61,12 +71,13 @@ def load_environment(env_file_path):
         print("    Using system environment variables only")
 
 # Setup logging
+log_file_path = project_root / 'mcp_server.log'
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('mcp_server.log')
+        logging.FileHandler(log_file_path)
     ]
 )
 logger = logging.getLogger(__name__)

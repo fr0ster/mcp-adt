@@ -4,6 +4,10 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
 
 **🆕 Now includes SAP BTP (Business Technology Platform) support with JWT authentication and service key utilities!**
 
+**📚 Quick Start**: See [QUICK_START.md](doc/QUICK_START.md) for immediate setup instructions.
+
+**📖 Documentation**: Complete documentation is available in the [doc/](doc/) folder.
+
 ---
 
 ## Prerequisites
@@ -21,6 +25,8 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
    git clone https://github.com/<your-org>/<your-repo>.git
    cd <your-repo>
    ```
+
+   **Note**: The MCP server can now be run from any directory, not just the project directory. See [REMOTE_CONNECTION_GUIDE.md](doc/REMOTE_CONNECTION_GUIDE.md) for details.
 
 2. **Create and activate a virtual environment**
 
@@ -86,7 +92,7 @@ This server now includes comprehensive SAP BTP support with:
    ```
 3. **Use the generated .env file** in your project
 
-For complete BTP integration details, see [BTP_INTEGRATION_GUIDE.md](BTP_INTEGRATION_GUIDE.md).
+For complete BTP integration details, see [BTP_INTEGRATION_GUIDE.md](doc/BTP_INTEGRATION_GUIDE.md).
 
 ### Available Tools
 
@@ -115,6 +121,46 @@ For complete BTP integration details, see [BTP_INTEGRATION_GUIDE.md](BTP_INTEGRA
 * `generate_env_from_service_key_json_mcp` – Generate .env from service key JSON
 * `parse_btp_service_key_mcp` – Parse and analyze service keys
 * `get_btp_connection_status_mcp` – Check current BTP configuration
+
+## Troubleshooting
+
+### "MCP error -32000: Connection closed" Error
+
+If you get this error when connecting from another directory:
+
+1. **Make sure you use the full path to the server:**
+   ```bash
+   python /full/path/to/mcp-adt/mcp_server.py
+   ```
+
+2. **Check MCP client configuration:**
+   ```json
+   {
+     "mcpServers": {
+       "adt-server": {
+         "command": "python",
+         "args": ["/full/path/to/mcp-adt/mcp_server.py"]
+       }
+     }
+   }
+   ```
+
+3. **Run connection test:**
+   ```bash
+   python /path/to/mcp-adt/test_remote_connection.py
+   ```
+
+4. **Check logs:**
+   - Log file is created in project directory: `mcp_server.log`
+   - Check for import or configuration errors
+
+### Other Common Issues
+
+- **ModuleNotFoundError**: Make sure all dependencies are installed: `pip install -r requirements.txt`
+- **.env file issues**: File is automatically searched in project directory
+- **Permission issues**: On Linux/macOS you may need `chmod +x mcp_server.py`
+
+For detailed information see [REMOTE_CONNECTION_GUIDE.md](doc/REMOTE_CONNECTION_GUIDE.md)
 
 ## License
 
