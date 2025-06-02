@@ -3,7 +3,7 @@
 import xmltodict
 from typing import Dict, List, Any, Optional
 from requests.exceptions import HTTPError, RequestException
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session_with_timeout, SAP_URL, SAP_CLIENT
 
 # JSON schema for MCP function-calling
 get_table_contents_definition = {
@@ -197,7 +197,8 @@ def get_table_contents(table_name: str, max_rows: int = 100) -> Dict[str, Any]:
     if not table_name:
         raise ValueError("table_name is required")
 
-    session = make_session()
+    # Use default timeout for getting table fields
+    session = make_session_with_timeout("default")
     
     try:
         # Step 1: Get table fields
@@ -206,7 +207,8 @@ def get_table_contents(table_name: str, max_rows: int = 100) -> Dict[str, Any]:
         # Step 2: Generate SQL query
         sql_query = _generate_sql_query(table_name, fields)
         
-        # Step 3: Execute query via data preview API
+        # Step 3: Execute query via data preview API with long timeout
+        long_session = make_session_with_timeout("long")
         endpoint = f"{SAP_URL.rstrip('/')}/sap/bc/adt/datapreview/freestyle"
         params = {
             "sap-client": SAP_CLIENT,
@@ -217,12 +219,12 @@ def get_table_contents(table_name: str, max_rows: int = 100) -> Dict[str, Any]:
             "Accept": "application/vnd.sap.adt.datapreview.table.v1+xml"
         }
         
-        # Get CSRF token first
+        # Get CSRF token first with csrf timeout
+        csrf_session = make_session_with_timeout("csrf")
         csrf_url = f"{SAP_URL.rstrip('/')}/sap/bc/adt/discovery"
-        csrf_resp = session.get(
+        csrf_resp = csrf_session.get(
             csrf_url,
-            headers={"x-csrf-token": "fetch", "Accept": "application/atomsvc+xml"},
-            timeout=10
+            headers={"x-csrf-token": "fetch", "Accept": "application/atomsvc+xml"}
         )
         
         token = csrf_resp.headers.get("x-csrf-token")
@@ -233,14 +235,14 @@ def get_table_contents(table_name: str, max_rows: int = 100) -> Dict[str, Any]:
         headers["x-csrf-token"] = token
         
         # Add cookies if available
-        if session.cookies:
-            auto_cookies = "; ".join([f"{cookie.name}={cookie.value}" for cookie in session.cookies])
+        if long_session.cookies:
+            auto_cookies = "; ".join([f"{cookie.name}={cookie.value}" for cookie in long_session.cookies])
             headers["Cookie"] = auto_cookies
         
         print(f"Making POST request to: {endpoint}")
         print(f"SQL Query: {sql_query}")
         
-        resp = session.post(
+        resp = long_session.post(
             endpoint,
             params=params,
             headers=headers,

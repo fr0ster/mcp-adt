@@ -4,22 +4,26 @@ import base64
 import re
 from typing import Dict, List, Any, Optional
 from requests.exceptions import HTTPError, RequestException
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session_with_timeout, SAP_URL, SAP_CLIENT
 
 # JSON schema for MCP function-calling
 get_enhancements_definition = {
     "name": "get_enhancements",
-    "description": "Retrieve enhancement implementations for ABAP programs/includes with auto-detection of object type.",
+    "description": "🔍 ENHANCEMENT ANALYSIS: Retrieve and analyze enhancement implementations in ABAP programs or includes. Automatically detects object type and extracts enhancement source code. Use include_nested=true for COMPREHENSIVE RECURSIVE SEARCH across all nested includes.",
     "parameters": {
         "type": "object",
         "properties": {
             "object_name": {
                 "type": "string",
-                "description": "Name of the ABAP program or include (e.g. 'RSPARAM' or 'RSBTABSP')."
+                "description": "Name of the ABAP program or include (e.g. 'RM07DOCS' for program, 'RM07DOCS_F01' for include)"
             },
             "program": {
                 "type": "string",
-                "description": "Optional manual program context for includes (if auto-detection fails)."
+                "description": "Optional: For includes, manually specify the parent program name if automatic context detection fails (e.g., 'SAPMV45A')"
+            },
+            "include_nested": {
+                "type": "boolean",
+                "description": "⭐ RECURSIVE ENHANCEMENT SEARCH: If true, performs comprehensive analysis - searches for enhancements in the main object AND all nested includes recursively. Perfect for complete enhancement audit of entire program hierarchy. Default is false (single object only)."
             }
         },
         "required": ["object_name"]
@@ -170,59 +174,128 @@ def _determine_object_type_and_path(object_name: str, manual_program_context: Op
             f"Failed to determine object type for: {object_name}. {str(error)}"
         )
 
-def get_enhancements(object_name: str, program: Optional[str] = None) -> Dict[str, Any]:
+def _get_enhancements_for_single_object(object_name: str, manual_program_context: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Gets enhancements for a single object (program or include).
+    """
+    print(f"Getting enhancements for single object: {object_name}")
+    if manual_program_context:
+        print(f"With manual program context: {manual_program_context}")
+    
+    # Use csrf timeout for object type determination
+    csrf_session = make_session_with_timeout("csrf")
+    
+    # Determine object type and get appropriate path and context
+    object_info = _determine_object_type_and_path(object_name, manual_program_context, csrf_session)
+    
+    # Build URL based on object type
+    base_url = SAP_URL.rstrip('/')
+    url = f"{base_url}{object_info['base_path']}"
+    
+    # Add context parameter only for includes
+    if object_info["type"] == "include" and object_info.get("context"):
+        url += f"?context={object_info['context']}"
+        print(f"Using context for include: {object_info['context']}")
+    
+    print(f"Final enhancement URL: {url}")
+    
+    # Make the request with default timeout
+    default_session = make_session_with_timeout("default")
+    response = default_session.get(
+        url,
+        params={"sap-client": SAP_CLIENT},
+        headers={"Accept": "application/vnd.sap.adt.enhancement.v1+xml"}
+    )
+    
+    response.raise_for_status()
+    
+    if response.status_code == 200 and response.text:
+        # Parse the XML to extract enhancement implementations
+        enhancements = _parse_enhancements_from_xml(response.text)
+        
+        enhancement_response = {
+            "object_name": object_name,
+            "object_type": object_info["type"],
+            "context": object_info.get("context"),
+            "enhancements": [enh.to_dict() for enh in enhancements],
+            "enhancement_count": len(enhancements),
+            "raw_xml": response.text  # Include raw XML for debugging if needed
+        }
+        
+        return enhancement_response
+    else:
+        raise AdtError(response.status_code, f"Failed to retrieve enhancements for {object_name}. Status: {response.status_code}")
+
+
+def get_enhancements(object_name: str, program: Optional[str] = None, include_nested: bool = False) -> Dict[str, Any]:
     """
     Retrieve enhancement implementations for ABAP programs/includes.
     Automatically determines if object is a program or include and handles accordingly.
+    
+    Args:
+        object_name: Name of the ABAP object
+        program: Optional manual program context for includes
+        include_nested: If true, also searches enhancements in all nested includes recursively
     """
     print(f"Getting enhancements for object: {object_name}")
     if program:
         print(f"With manual program context: {program}")
+    print(f"Include nested: {include_nested}")
     
     if not object_name:
         raise ValueError("object_name is required")
 
-    session = make_session()
+    # Use csrf timeout for object type determination
+    csrf_session = make_session_with_timeout("csrf")
     
     try:
-        # Determine object type and get appropriate path and context
-        object_info = _determine_object_type_and_path(object_name, program, session)
+        # Get enhancements for the main object
+        main_enhancement_response = _get_enhancements_for_single_object(object_name, program)
         
-        # Build URL based on object type
-        base_url = SAP_URL.rstrip('/')
-        url = f"{base_url}{object_info['base_path']}"
+        if not include_nested:
+            # Return only main object enhancements
+            return main_enhancement_response
         
-        # Add context parameter only for includes
-        if object_info["type"] == "include" and object_info.get("context"):
-            url += f"?context={object_info['context']}"
-            print(f"Using context for include: {object_info['context']}")
+        # If include_nested is true, also get enhancements from all nested includes
+        print('Searching for nested includes and their enhancements...')
         
-        print(f"Final enhancement URL: {url}")
+        # Import includes_list function
+        from .includes_list import get_includes_list
         
-        # Make the request
-        response = session.get(
-            url,
-            params={"sap-client": SAP_CLIENT},
-            headers={"Accept": "application/vnd.sap.adt.enhancement.v1+xml"}
-        )
+        # Get all includes recursively
+        includes_result = get_includes_list(object_name, main_enhancement_response["object_type"])
+        includes_list = includes_result.get("includes", [])
         
-        response.raise_for_status()
+        print(f"Found {len(includes_list)} nested includes: {includes_list}")
         
-        if response.status_code == 200 and response.text:
-            # Parse the XML to extract enhancement implementations
-            enhancements = _parse_enhancements_from_xml(response.text)
-            
-            enhancement_response = {
-                "object_name": object_name,
-                "object_type": object_info["type"],
-                "context": object_info.get("context"),
-                "enhancements": [enh.to_dict() for enh in enhancements],
-                "enhancement_count": len(enhancements)
-            }
-            
-            return enhancement_response
-        else:
-            raise AdtError(response.status_code, f"Failed to retrieve enhancements. Status: {response.status_code}")
+        # Collect all enhancement responses
+        all_enhancement_responses = [main_enhancement_response]
+        
+        # Get enhancements for each include
+        for include_name in includes_list:
+            try:
+                print(f"Getting enhancements for nested include: {include_name}")
+                include_enhancements = _get_enhancements_for_single_object(include_name, program)
+                all_enhancement_responses.append(include_enhancements)
+            except Exception as error:
+                print(f"Failed to get enhancements for include {include_name}: {error}")
+                # Continue with other includes even if one fails
+        
+        # Create combined response
+        total_enhancements = sum(resp["enhancement_count"] for resp in all_enhancement_responses)
+        
+        combined_response = {
+            "main_object": {
+                "name": object_name,
+                "type": main_enhancement_response["object_type"]
+            },
+            "include_nested": True,
+            "total_objects_analyzed": len(all_enhancement_responses),
+            "total_enhancements_found": total_enhancements,
+            "objects": all_enhancement_responses
+        }
+        
+        return combined_response
             
     except HTTPError as e:
         if e.response.status_code == 404:

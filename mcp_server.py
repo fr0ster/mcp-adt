@@ -28,6 +28,7 @@ from src.tools.metadata_extension_source import get_metadata_extension_source
 from src.tools.table_contents import get_table_contents
 from src.tools.sql_query import get_sql_query
 from src.tools.enhancements import get_enhancements
+from src.tools.includes_list import get_includes_list
 from src.tools.btp_tools import (
     generate_env_from_service_key_file,
     generate_env_from_service_key_json,
@@ -202,15 +203,27 @@ def get_sql_query_mcp(sql_query: str, max_rows: int = 100) -> dict:
     return get_sql_query(sql_query, max_rows)
 
 @mcp.tool()
-def get_enhancements_mcp(object_name: str, program: str = None) -> dict:
+def get_includes_list_mcp(object_name: str, object_type: str) -> dict:
+    """Tool: get_includes_list
+       Description:
+         📋 INCLUDE INVENTORY: Recursively discover and list ALL include files within an ABAP program or include. Performs code analysis to find include statements and builds a complete hierarchy. Use this when you need to understand the program structure or get a list of all includes (without their source code or enhancements).
+       Parameters (object):
+         object_name (string): Name of the ABAP program or include to analyze for nested includes
+         object_type (string): Type of the ABAP object (program or include)
+       Required: [ "object_name", "object_type" ]"""
+    return get_includes_list(object_name, object_type)
+
+@mcp.tool()
+def get_enhancements_mcp(object_name: str, program: str = None, include_nested: bool = False) -> dict:
     """Tool: get_enhancements
        Description:
-         Retrieve enhancement implementations for ABAP programs/includes with auto-detection of object type.
+         🔍 ENHANCEMENT ANALYSIS: Retrieve and analyze enhancement implementations in ABAP programs or includes. Automatically detects object type and extracts enhancement source code. Use include_nested=true for COMPREHENSIVE RECURSIVE SEARCH across all nested includes.
        Parameters (object):
-         object_name (string): Name of the ABAP program or include (e.g. 'RSPARAM' or 'RSBTABSP')
-         program (string): Optional manual program context for includes (if auto-detection fails)
+         object_name (string): Name of the ABAP program or include (e.g. 'RM07DOCS' for program, 'RM07DOCS_F01' for include)
+         program (string): Optional: For includes, manually specify the parent program name if automatic context detection fails (e.g., 'SAPMV45A')
+         include_nested (boolean): ⭐ RECURSIVE ENHANCEMENT SEARCH: If true, performs comprehensive analysis - searches for enhancements in the main object AND all nested includes recursively. Perfect for complete enhancement audit of entire program hierarchy. Default is false (single object only).
        Required: [ "object_name" ]"""
-    return get_enhancements(object_name, program)
+    return get_enhancements(object_name, program, include_nested)
 
 @mcp.tool()
 def generate_env_from_service_key_file_mcp(

@@ -3,7 +3,7 @@
 import re
 from typing import Dict, List, Any, Optional
 from requests.exceptions import HTTPError, RequestException
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session_with_timeout, SAP_URL, SAP_CLIENT
 
 # JSON schema for MCP function-calling
 get_sql_query_definition = {
@@ -126,7 +126,8 @@ def get_sql_query(sql_query: str, max_rows: int = 100) -> Dict[str, Any]:
     if not sql_query:
         raise ValueError("sql_query is required")
 
-    session = make_session()
+    # Use long timeout for SQL queries as they can take time
+    session = make_session_with_timeout("long")
     
     try:
         # Build URL for freestyle data preview
@@ -140,12 +141,12 @@ def get_sql_query(sql_query: str, max_rows: int = 100) -> Dict[str, Any]:
             "Accept": "application/vnd.sap.adt.datapreview.table.v1+xml"
         }
         
-        # Get CSRF token first
+        # Get CSRF token first with csrf timeout
+        csrf_session = make_session_with_timeout("csrf")
         csrf_url = f"{SAP_URL.rstrip('/')}/sap/bc/adt/discovery"
-        csrf_resp = session.get(
+        csrf_resp = csrf_session.get(
             csrf_url,
-            headers={"x-csrf-token": "fetch", "Accept": "application/atomsvc+xml"},
-            timeout=10
+            headers={"x-csrf-token": "fetch", "Accept": "application/atomsvc+xml"}
         )
         
         token = csrf_resp.headers.get("x-csrf-token")

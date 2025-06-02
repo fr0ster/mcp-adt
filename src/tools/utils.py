@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, Union
 
 load_dotenv()
 
@@ -18,7 +18,42 @@ SAP_PASS   = os.getenv("SAP_PASS")
 SAP_AUTH_TYPE = os.getenv("SAP_AUTH_TYPE", "basic").lower()
 SAP_JWT_TOKEN = os.getenv("SAP_JWT_TOKEN")
 VERIFY_SSL = os.getenv("SAP_VERIFY_SSL", "true").lower() == "true"
+
+# Legacy timeout for backward compatibility
 TIMEOUT    = int(os.getenv("SAP_TIMEOUT", "30"))
+
+# Timeout configuration
+def get_timeout_config() -> dict:
+    """Get timeout configuration from environment variables with fallback defaults.
+    
+    Returns:
+        dict: Dictionary with timeout values in seconds
+    """
+    default_timeout = int(os.getenv("SAP_TIMEOUT_DEFAULT", "45"))
+    csrf_timeout = int(os.getenv("SAP_TIMEOUT_CSRF", "15"))
+    long_timeout = int(os.getenv("SAP_TIMEOUT_LONG", "60"))
+    
+    return {
+        "default": default_timeout,
+        "csrf": csrf_timeout,
+        "long": long_timeout
+    }
+
+
+def get_timeout(timeout_type: Union[str, int] = "default") -> int:
+    """Get timeout value for specific operation type.
+    
+    Args:
+        timeout_type: Type of operation ('default', 'csrf', 'long') or custom number
+        
+    Returns:
+        int: Timeout value in seconds
+    """
+    if isinstance(timeout_type, int):
+        return timeout_type
+    
+    config = get_timeout_config()
+    return config.get(timeout_type, config["default"])
 
 
 def validate_configuration():
@@ -43,10 +78,13 @@ def validate_configuration():
         )
 
 
-def make_session():
+def make_session(timeout_type: Union[str, int] = "default"):
     """
     Creates and configures a requests.Session for ADT calls using global settings.
     Supports both basic authentication and JWT token authentication.
+    
+    Args:
+        timeout_type: Type of operation ('default', 'csrf', 'long') or custom number in seconds
     
     Note: This function imports requests only when needed to avoid import issues.
     """
@@ -57,7 +95,7 @@ def make_session():
     
     session = requests.Session()
     session.verify = VERIFY_SSL
-    session.timeout = TIMEOUT
+    session.timeout = get_timeout(timeout_type)
     
     if SAP_AUTH_TYPE == "jwt":
         # Use JWT token authentication
@@ -72,3 +110,17 @@ def make_session():
         session.params = {"sap-client": SAP_CLIENT}
     
     return session
+
+
+def make_session_with_timeout(timeout_type: Union[str, int] = "default"):
+    """
+    Simplified session creation function that uses configurable timeouts.
+    This is equivalent to the Node.js makeAdtRequestWithTimeout functionality.
+    
+    Args:
+        timeout_type: Timeout type ('default', 'csrf', 'long') or custom number in seconds
+        
+    Returns:
+        requests.Session: Configured session with appropriate timeout
+    """
+    return make_session(timeout_type)

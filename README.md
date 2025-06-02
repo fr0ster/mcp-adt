@@ -64,7 +64,11 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
    SAP_USER=YOUR_USER
    SAP_PASS=YOUR_PASS
    SAP_VERIFY_SSL=true
-   SAP_TIMEOUT=30
+
+   # Optional timeout configuration (in seconds)
+   SAP_TIMEOUT_DEFAULT=45                 # Default timeout (45 seconds)
+   SAP_TIMEOUT_CSRF=15                    # CSRF token timeout (15 seconds)
+   SAP_TIMEOUT_LONG=60                    # Long operations timeout (60 seconds)
    ```
 
    ### For BTP Systems (JWT Authentication)
@@ -73,7 +77,11 @@ This repository provides a Model Context Protocol (MCP) server for ABAP Developm
    SAP_URL=https://your-system.abap.region.hana.ondemand.com
    SAP_JWT_TOKEN=eyJhbGciOiJSUzI1NiIsImp...
    SAP_VERIFY_SSL=true
-   SAP_TIMEOUT=30
+
+   # Optional timeout configuration (in seconds)
+   SAP_TIMEOUT_DEFAULT=45                 # Default timeout (45 seconds)
+   SAP_TIMEOUT_CSRF=15                    # CSRF token timeout (15 seconds)
+   SAP_TIMEOUT_LONG=60                    # Long operations timeout (60 seconds)
    ```
 
    **💡 Tip**: Use the included BTP utilities to generate .env files from service keys automatically!
