@@ -101,12 +101,29 @@ def _parse_enhancements_from_xml(xml_data: str) -> List[EnhancementImplementatio
 
 def _determine_object_type_and_path(object_name: str, manual_program_context: Optional[str] = None, session=None) -> Dict[str, Any]:
     """
-    Determine if an object is a program or include and return appropriate URL path.
+    Determine if an object is a program, include, or class and return appropriate URL path.
     """
     base_url = SAP_URL.rstrip('/')
     
     try:
-        # First try as a program
+        # First try as a class
+        class_url = f"{base_url}/sap/bc/adt/oo/classes/{object_name}"
+        try:
+            response = session.get(
+                class_url,
+                params={"sap-client": SAP_CLIENT},
+                headers={"Accept": "application/vnd.sap.adt.oo.classes.v4+xml"}
+            )
+            if response.status_code == 200:
+                print(f"{object_name} is a class")
+                return {
+                    "type": "class",
+                    "base_path": f"/sap/bc/adt/oo/classes/{object_name}/source/main/enhancements/elements"
+                }
+        except Exception as class_error:
+            print(f"{object_name} is not a class, trying as program...")
+        
+        # Try as a program
         program_url = f"{base_url}/sap/bc/adt/programs/programs/{object_name}"
         try:
             response = session.get(
@@ -162,7 +179,7 @@ def _determine_object_type_and_path(object_name: str, manual_program_context: Op
         raise AdtError(
             400,
             f"Could not determine object type for: {object_name}. "
-            f"Object is neither a valid program nor include."
+            f"Object is neither a valid class, program, nor include."
         )
         
     except Exception as error:

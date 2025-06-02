@@ -29,6 +29,7 @@ from src.tools.table_contents import get_table_contents
 from src.tools.sql_query import get_sql_query
 from src.tools.enhancements import get_enhancements
 from src.tools.includes_list import get_includes_list
+from src.tools.enhancement_by_name import get_enhancement_by_name
 from src.tools.btp_tools import (
     generate_env_from_service_key_file,
     generate_env_from_service_key_json,
@@ -217,13 +218,24 @@ def get_includes_list_mcp(object_name: str, object_type: str) -> dict:
 def get_enhancements_mcp(object_name: str, program: str = None, include_nested: bool = False) -> dict:
     """Tool: get_enhancements
        Description:
-         🔍 ENHANCEMENT ANALYSIS: Retrieve and analyze enhancement implementations in ABAP programs or includes. Automatically detects object type and extracts enhancement source code. Use include_nested=true for COMPREHENSIVE RECURSIVE SEARCH across all nested includes.
+         🔍 ENHANCEMENT ANALYSIS: Retrieve and analyze enhancement implementations in ABAP programs, includes, or classes. Automatically detects object type and extracts enhancement source code. Use include_nested=true for COMPREHENSIVE RECURSIVE SEARCH across all nested includes.
        Parameters (object):
-         object_name (string): Name of the ABAP program or include (e.g. 'RM07DOCS' for program, 'RM07DOCS_F01' for include)
+         object_name (string): Name of the ABAP program, include, or class (e.g. 'RM07DOCS' for program, 'RM07DOCS_F01' for include, 'CL_MY_CLASS' for class)
          program (string): Optional: For includes, manually specify the parent program name if automatic context detection fails (e.g., 'SAPMV45A')
          include_nested (boolean): ⭐ RECURSIVE ENHANCEMENT SEARCH: If true, performs comprehensive analysis - searches for enhancements in the main object AND all nested includes recursively. Perfect for complete enhancement audit of entire program hierarchy. Default is false (single object only).
        Required: [ "object_name" ]"""
     return get_enhancements(object_name, program, include_nested)
+
+@mcp.tool()
+def get_enhancement_by_name_mcp(enhancement_spot: str, enhancement_name: str) -> dict:
+    """Tool: get_enhancement_by_name
+       Description:
+         📝 ENHANCEMENT BY NAME: Retrieve source code of a specific enhancement implementation by its name and enhancement spot. Use this when you know the exact enhancement spot and implementation name.
+       Parameters (object):
+         enhancement_spot (string): Name of the enhancement spot (e.g., 'enhoxhh')
+         enhancement_name (string): Name of the specific enhancement implementation (e.g., 'zpartner_update_pai')
+       Required: [ "enhancement_spot", "enhancement_name" ]"""
+    return get_enhancement_by_name(enhancement_spot, enhancement_name)
 
 @mcp.tool()
 def generate_env_from_service_key_file_mcp(
