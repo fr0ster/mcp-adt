@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from dotenv import load_dotenv
 from typing import Optional, Union
 
@@ -124,3 +125,17 @@ def make_session_with_timeout(timeout_type: Union[str, int] = "default"):
         requests.Session: Configured session with appropriate timeout
     """
     return make_session(timeout_type)
+
+
+def encode_sap_object_name(object_name: str) -> str:
+    """
+    Encode SAP object names for safe use in URLs.
+    This is especially important for objects in namespaces that contain '/' characters.
+    
+    Args:
+        object_name: SAP object name (e.g., '/1CPR/CL_000_0SAP2_FAG')
+        
+    Returns:
+        str: URL-encoded object name (e.g., '%2F1CPR%2FCL_000_0SAP2_FAG')
+    """
+    return urllib.parse.quote(object_name, safe='')

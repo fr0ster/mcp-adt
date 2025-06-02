@@ -1,6 +1,6 @@
 import xmltodict
 from requests.exceptions import HTTPError, RequestException
-from .utils import AdtError, make_session, SAP_URL
+from .utils import AdtError, make_session, SAP_URL, encode_sap_object_name
 
 # Function-calling metadata for Gemini
 get_class_source_definition = {
@@ -25,7 +25,8 @@ def get_class_source(class_name: str) -> list[str]:
         raise ValueError("class_name is required")
 
     session = make_session()
-    endpoint = f"{SAP_URL.rstrip('/')}/sap/bc/adt/oo/classes/{class_name}/source/main"
+    encoded_class_name = encode_sap_object_name(class_name)
+    endpoint = f"{SAP_URL.rstrip('/')}/sap/bc/adt/oo/classes/{encoded_class_name}/source/main"
     hdr_xml   = {"Accept": "application/vnd.sap.adt.abapsource+xml"}
     hdr_plain = {"Accept": "text/plain"}
 

@@ -1,5 +1,5 @@
 import xmltodict
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT, encode_sap_object_name
 
 # JSON schema for Gemini function‐calling
 get_table_source_definition = {
@@ -33,7 +33,8 @@ def get_table_source(
 
     session = make_session()
     base     = SAP_URL.rstrip('/')
-    endpoint = f"{base}/sap/bc/adt/ddic/tables/{table_name}/source/main"
+    encoded_table_name = encode_sap_object_name(table_name)
+    endpoint = f"{base}/sap/bc/adt/ddic/tables/{encoded_table_name}/source/main"
     params   = {"sap-client": SAP_CLIENT}
     hdr_xml  = {"Accept": "application/vnd.sap.adt.abapsource+xml"}
     hdr_txt  = {"Accept": "text/plain"}

@@ -1,7 +1,7 @@
 # tools/cds_source.py
 
 from requests.exceptions import HTTPError, RequestException
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT, encode_sap_object_name
 
 # Gemini function-calling schema
 get_cds_source_definition = {
@@ -32,7 +32,8 @@ def get_cds_source(cds_name: str) -> list[str]:
 
     session  = make_session()
     base     = SAP_URL.rstrip('/')
-    endpoint = f"{base}/sap/bc/adt/ddic/ddl/sources/{cds_name}/source/main"
+    encoded_cds_name = encode_sap_object_name(cds_name)
+    endpoint = f"{base}/sap/bc/adt/ddic/ddl/sources/{encoded_cds_name}/source/main"
     params   = {"sap-client": SAP_CLIENT}
     headers  = {"Accept": "text/plain"}
 

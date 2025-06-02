@@ -1,5 +1,5 @@
 import xmltodict
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT, encode_sap_object_name
 
 # JSON schema for Gemini function‐calling
 get_include_source_definition = {
@@ -33,9 +33,10 @@ def get_include_source(
 
     session = make_session()
     base     = SAP_URL.rstrip('/')
+    encoded_include_name = encode_sap_object_name(include_name)
     endpoint = (
         f"{base}/sap/bc/adt/programs/"
-        f"includes/{include_name}/source/main"
+        f"includes/{encoded_include_name}/source/main"
     )
     params   = {"sap-client": SAP_CLIENT}
     hdr_xml  = {"Accept": "application/vnd.sap.adt.abapsource+xml"}

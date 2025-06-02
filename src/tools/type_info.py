@@ -3,7 +3,7 @@
 import xmltodict
 from xml.dom.minidom import parseString
 from requests.exceptions import HTTPError, RequestException
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT, encode_sap_object_name
 
 # JSON schema for Gemini function‐calling
 get_type_info_definition = {
@@ -54,7 +54,8 @@ def get_type_info(type_name: str) -> list[str]:
     hdr_txt = {"Accept": "text/plain"}
 
     # 1) Try domain source
-    domain_url = f"{base}/sap/bc/adt/ddic/domains/{type_name}/source/main"
+    encoded_type_name = encode_sap_object_name(type_name)
+    domain_url = f"{base}/sap/bc/adt/ddic/domains/{encoded_type_name}/source/main"
     try:
         resp = session.get(domain_url, params=params, headers=hdr_xml)
         if resp.status_code == 406:
@@ -69,7 +70,7 @@ def get_type_info(type_name: str) -> list[str]:
         raise ConnectionError(f"Network error fetching domain: {e}") from e
 
     # 2) Now try data element (no Accept header)
-    de_url = f"{base}/sap/bc/adt/ddic/dataelements/{type_name}"
+    de_url = f"{base}/sap/bc/adt/ddic/dataelements/{encoded_type_name}"
     try:
         resp = session.get(de_url, params=params)
         resp.raise_for_status()

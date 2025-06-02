@@ -1,6 +1,5 @@
 import xmltodict
-from urllib.parse import quote
-from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT
+from .utils import AdtError, make_session, SAP_URL, SAP_CLIENT, encode_sap_object_name
 
 # JSON schema for Gemini function‐calling
 get_transaction_properties_definition = {
@@ -39,7 +38,7 @@ def get_transaction_properties(
     )
 
     # Build the object URI for the transaction
-    encoded_tx = quote(transaction_name, safe='')
+    encoded_tx = encode_sap_object_name(transaction_name)
     uri = f"/sap/bc/adt/vit/wb/object_type/trant/object_name/{encoded_tx}"
 
     params = {

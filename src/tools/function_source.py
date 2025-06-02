@@ -1,5 +1,5 @@
 import xmltodict
-from .utils import AdtError, make_session, SAP_URL
+from .utils import AdtError, make_session, SAP_URL, encode_sap_object_name
 
 # Function‐calling metadata for Gemini
 get_function_source_definition = {
@@ -35,9 +35,11 @@ def get_function_source(
         raise ValueError("function_group and function_name are required")
 
     session = make_session()
+    encoded_function_group = encode_sap_object_name(function_group)
+    encoded_function_name = encode_sap_object_name(function_name)
     endpoint = (
         f"{SAP_URL.rstrip('/')}/sap/bc/adt/functions/"
-        f"groups/{function_group}/fmodules/{function_name}/source/main"
+        f"groups/{encoded_function_group}/fmodules/{encoded_function_name}/source/main"
     )
     hdr_xml   = {"Accept": "application/vnd.sap.adt.abapsource+xml"}
     hdr_plain = {"Accept": "text/plain"}
