@@ -11,3 +11,6 @@ __pycache__/
 *.egg-info/
 *.egg
 *.zip
+btp_02.env
+*.env
+sk.json
